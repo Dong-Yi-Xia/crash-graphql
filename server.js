@@ -95,11 +95,24 @@ const RootQueryType = new GraphQLObjectType({
         return books.find(book => book.id === args.id)
       }
     },
+
     books: {
       type: new GraphQLList(BookType), // Array list
       description: 'List of All Books',
       resolve: () => books //return the books json object
     },
+
+    author: {
+      type: AuthorType,
+      description: 'A single Author',
+      args: {
+        id: { type: GraphQLInt}
+      },
+      resolve: (parent, args) => {
+        return authors.find(author => author.id === args.id)
+      }
+    },
+
     authors: {
       type: new GraphQLList(AuthorType), // Array list
       description: 'List of All Authors',
@@ -108,8 +121,43 @@ const RootQueryType = new GraphQLObjectType({
   })
 })
 
+//Modify - Post, Put, Delete
+const RootMutationType = new GraphQLObjectType({
+  name: 'Mutation',
+  description: 'Root Mutation',
+  fields: () => ({
+    addBook: {
+      type: BookType,
+      description: 'Add a book',
+      args: {
+        name: { type: new GraphQLNonNull(GraphQLString)},
+        authorId: { type: new GraphQLNonNull(GraphQLInt)}
+      },
+      resolve: (parent, args) => {
+        const book = { id: books.length + 1, name: args.name, authorId: args.authorId}
+        books.push(book)
+        return book
+      }
+    },
+
+    addAuthor: {
+      type: AuthorType,
+      description: 'Add a author',
+      args: {
+        name: { type: new GraphQLNonNull(GraphQLString)},
+      },
+      resolve: (parent, args) => {
+        const author = { id: authors.length + 1, name: args.name}
+        authors.push(author)
+        return author
+      }
+    }
+  })
+})
+
 const schema = new GraphQLSchema({
-  query: RootQueryType
+  query: RootQueryType,
+  mutation: RootMutationType,
 })
 
 app.use('/graphql', expressGraphQL.graphqlHTTP({
@@ -123,10 +171,10 @@ app.listen(5000, () => console.log('Serving is now running HAHA'));
 
 /*
 doesn't need to add query {}
-can remove query, default implies
+can remove query, default implies just {}
 api endpoint localhost:5000/graphql
 
-{
+query {
   book(id:1){
     name
   }
@@ -138,11 +186,26 @@ api endpoint localhost:5000/graphql
     }
   }
 
-  author {
+  author(id: 2) {
     name
     books {
       name
     }
+  }
+
+  authors(id: 2) {
+    name
+    books {
+      name
+    }
+  }
+}
+
+
+mutation {
+  addBook(name:"funny", authorId:2){
+    id
+    name
   }
 }
 
